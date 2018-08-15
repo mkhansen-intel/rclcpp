@@ -33,6 +33,7 @@
 #include "rclcpp/logging.hpp"
 
 #include "rclcpp/service.hpp"
+#include "rclcpp/node_interfaces/node_services_interface.hpp"
 
 namespace rclcpp
 {
@@ -89,14 +90,21 @@ public:
     const std::string & action_name,
     AnyServiceCallback<ServiceT> request_callback,
     AnyServiceCallback<ServiceT> cancel_callback,
-    rcl_service_options_t & service_options)
+    rcl_service_options_t & service_options,
+	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
+	rclcpp::callback_group::CallbackGroup::SharedPtr group)
   : ActionServerBase(node_handle), request_callback_(request_callback), cancel_callback_(cancel_callback)
   {
 	  std::string request_service_name = "_request_" + action_name;
     request_service_ = Service<ServiceT>::make_shared(node_handle, request_service_name, request_callback, service_options);
-	  std::string cancel_service_name = "_cancel_" + action_name;
+    auto req_base_ptr = std::dynamic_pointer_cast<ServiceBase>(request_service_);
+    node_services->add_service(req_base_ptr, group);
+
+    std::string cancel_service_name = "_cancel_" + action_name;
     cancel_service_ = Service<ServiceT>::make_shared(node_handle, cancel_service_name, cancel_callback, service_options);
-  
+    auto cancel_base_ptr = std::dynamic_pointer_cast<ServiceBase>(request_service_);
+    node_services->add_service(cancel_base_ptr, group);
+
     //std::string feedback_topic_name = "_feedback_" + action_name;
 
     // TODO: Add feedback publisher

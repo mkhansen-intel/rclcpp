@@ -32,24 +32,6 @@ ActionServerBase::ActionServerBase(std::shared_ptr<rcl_node_t> node_handle)
 ActionServerBase::~ActionServerBase()
 {}
 
-const char *
-ActionServerBase::get_action_name()
-{
-  return rcl_service_get_service_name(this->get_request_service_handle().get());
-}
-
-std::shared_ptr<rcl_service_t>
-ActionServerBase::get_request_service_handle()
-{
-  return request_service_.get_service_handle();
-}
-
-std::shared_ptr<const rcl_service_t>
-ActionServerBase::get_request_service_handle() const
-{
-  return request_service_.get_service_handle();
-}
-
 rcl_node_t *
 ActionServerBase::get_rcl_node_handle()
 {

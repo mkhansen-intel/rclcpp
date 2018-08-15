@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCLCPP__SERVICE_HPP_
-#define RCLCPP__SERVICE_HPP_
+#ifndef RCLCPP__ACTIONSERVER_HPP_
+#define RCLCPP__ACTIONSERVER_HPP_
 
 #include <functional>
 #include <iostream>
@@ -22,6 +22,7 @@
 #include <string>
 
 #include "rcl/error_handling.h"
+#include "rcl/service.h"
 
 #include "rclcpp/any_service_callback.hpp"
 #include "rclcpp/exceptions.hpp"
@@ -52,30 +53,6 @@ public:
   const char *
   get_action_name();
 
-  RCLCPP_PUBLIC
-  std::shared_ptr<rcl_service_t>
-  get_request_service_handle();
-
-  RCLCPP_PUBLIC
-  std::shared_ptr<const rcl_service_t>
-  get_request_service_handle() const;
-
-  RCLCPP_PUBLIC
-  std::shared_ptr<rcl_service_t>
-  get_cancel_service_handle();
-
-  RCLCPP_PUBLIC
-  std::shared_ptr<const rcl_service_t>
-  get_cancel_service_handle() const;
-
-  RCLCPP_PUBLIC
-  rcl_publisher_t *
-  get_publisher_handle();
-
-  RCLCPP_PUBLIC
-  const rcl_publisher_t *
-  get_publisher_handle() const;
-
   virtual std::shared_ptr<void> create_request() = 0;
   virtual std::shared_ptr<rmw_request_id_t> create_request_header() = 0;
 
@@ -99,16 +76,14 @@ protected:
   get_rcl_node_handle() const;
 
   std::shared_ptr<rcl_node_t> node_handle_;
-  rclcpp::Service request_service_;
-  rclcpp::Service cancel_service_;
-  //rclcpp::Publisher feedback_publisher_;
-
 };
 
-template<typename ActionT>
+template<typename ServiceT>
 class ActionServer : public ActionServerBase
 {
 public:
+  RCLCPP_SMART_PTR_DEFINITIONS(ActionServer)
+
   ActionServer(
     std::shared_ptr<rcl_node_t> node_handle,
     const std::string & action_name,
@@ -117,17 +92,18 @@ public:
     rcl_service_options_t & service_options)
   : ActionServerBase(node_handle), request_callback_(request_callback), cancel_callback_(cancel_callback)
   {
-	request_service_name = "_request_" + action_name;
-    request_service_ = Service(node_handle, request_service_name, request_callback, service_options);
-	cancel_service_name = "_cancel_" + action_name;
-    cancel_service_ = Service(node_handle, cancel_service_name, cancel_callback, service_options);
-    feedback_topic_name = "_feedback_" + action_name;
+	  std::string request_service_name = "_request_" + action_name;
+    request_service_ = Service<ServiceT>::make_shared(node_handle, request_service_name, request_callback, service_options);
+	  std::string cancel_service_name = "_cancel_" + action_name;
+    cancel_service_ = Service<ServiceT>::make_shared(node_handle, cancel_service_name, cancel_callback, service_options);
+  
+    //std::string feedback_topic_name = "_feedback_" + action_name;
 
     // TODO: Add feedback publisher
     //feedback_publisher_ =
     // TODO: Create simple example / test for Action Server
-    }
   }
+  
   ActionServer() = delete;
 
   virtual ~ActionServer()
@@ -136,48 +112,48 @@ public:
 
   std::shared_ptr<void> create_request()
   {
-    return request_service_.create_request();
+    return request_service_->create_request();
   }
 
   std::shared_ptr<rmw_request_id_t> create_request_header()
   {
-	return request_service_.create_request_header();
+	return request_service_->create_request_header();
   }
 
   void handle_request(
     std::shared_ptr<rmw_request_id_t> request_header,
     std::shared_ptr<void> request)
   {
-    request_service_.handle_request(request_header, request)
+    request_service_->handle_request(request_header, request);
   }
 
   void handle_cancel(
     std::shared_ptr<rmw_request_id_t> request_header,
     std::shared_ptr<void> request)
   {
-    cancel_service_.handle_request(request_header, request)
+    cancel_service_->handle_request(request_header, request);
   }
 
   void send_request_response(
     std::shared_ptr<rmw_request_id_t> req_id,
     std::shared_ptr<typename ServiceT::Response> response)
   {
-    request_service_.send_response(req_id, response);
+    request_service_->send_response(req_id, response);
   }
 
   void send_cancel_response(
     std::shared_ptr<rmw_request_id_t> req_id,
     std::shared_ptr<typename ServiceT::Response> response)
   {
-	cancel_service_.send_response(req_id, response);
+	cancel_service_->send_response(req_id, response);
   }
 
 private:
-  RCLCPP_DISABLE_COPY(Service)
-
+  RCLCPP_DISABLE_COPY(ActionServer)
+  std::shared_ptr<Service<ServiceT>> request_service_;
+  std::shared_ptr<Service<ServiceT>> cancel_service_;
   AnyServiceCallback<ServiceT> request_callback_;
   AnyServiceCallback<ServiceT> cancel_callback_;
-
 };
 
 }  // namespace rclcpp

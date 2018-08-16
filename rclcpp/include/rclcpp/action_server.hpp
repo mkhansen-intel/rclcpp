@@ -102,7 +102,7 @@ public:
 
     std::string cancel_service_name = "_cancel_" + action_name;
     cancel_service_ = Service<ServiceT>::make_shared(node_handle, cancel_service_name, cancel_callback, service_options);
-    auto cancel_base_ptr = std::dynamic_pointer_cast<ServiceBase>(request_service_);
+    auto cancel_base_ptr = std::dynamic_pointer_cast<ServiceBase>(cancel_service_);
     node_services->add_service(cancel_base_ptr, group);
 
     //std::string feedback_topic_name = "_feedback_" + action_name;

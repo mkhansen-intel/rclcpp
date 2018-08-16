@@ -38,6 +38,7 @@
 #include "rclcpp/contexts/default_context.hpp"
 #include "rclcpp/intra_process_manager.hpp"
 #include "rclcpp/parameter.hpp"
+#include "rclcpp/create_action_server.hpp"
 #include "rclcpp/create_publisher.hpp"
 #include "rclcpp/create_service.hpp"
 #include "rclcpp/create_subscription.hpp"
@@ -200,6 +201,21 @@ Node::create_service(
   return rclcpp::create_service<ServiceT, CallbackT>(
     node_base_, node_services_,
     service_name, std::forward<CallbackT>(callback), qos_profile, group);
+}
+
+template<typename ActionT, typename CallbackT>
+typename rclcpp::ActionServer<ActionT>::SharedPtr
+Node::create_action_server(
+  const std::string & action_name,
+  CallbackT && action_callback,
+  CallbackT && cancel_callback,
+  const rmw_qos_profile_t & qos_profile,
+  rclcpp::callback_group::CallbackGroup::SharedPtr group)
+{
+  return rclcpp::create_action_server<ActionT, CallbackT>(
+    node_base_, node_services_,
+    action_name, std::forward<CallbackT>(action_callback), std::forward<CallbackT>(cancel_callback),
+	qos_profile, group);
 }
 
 template<typename CallbackT>

@@ -33,6 +33,7 @@
 #include "rcl_interfaces/msg/parameter_event.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
+#include "rclcpp/action_server.hpp"
 #include "rclcpp/callback_group.hpp"
 #include "rclcpp/client.hpp"
 #include "rclcpp/clock.hpp"
@@ -260,6 +261,17 @@ public:
     CallbackT && callback,
     const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
     rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
+ 
+  /* Create and return an ActionServer */
+  template<typename ActionT, typename CallbackT>
+  typename rclcpp::ActionServer<ActionT>::SharedPtr
+  create_action_server(
+    const std::string & action_name,
+    CallbackT && action_callback,
+	CallbackT && cancel_callback,
+    const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
+
 
   RCLCPP_PUBLIC
   std::vector<rcl_interfaces::msg::SetParametersResult>

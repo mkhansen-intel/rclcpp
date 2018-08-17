@@ -130,21 +130,32 @@ public:
   ActionClient(
     rclcpp::node_interfaces::NodeBaseInterface * node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
-    const std::string & service_name,
+    const std::string & action_name,
     rcl_client_options_t & client_options,
 	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
 	rclcpp::callback_group::CallbackGroup::SharedPtr group)
   : ActionClientBase(node_base, node_graph)
   {
-    action_client_ = Client<ActionT>::make_shared(
+    std::string request_service_name = "_request_" + action_name;
+    request_client_ = Client<ActionT>::make_shared(
         node_base,
         node_graph,
-        service_name,
+        request_service_name,
         client_options);
 
-    auto cli_base_ptr = std::dynamic_pointer_cast<ClientBase>(action_client_);
-    node_services->add_client(cli_base_ptr, group);
-  }
+    auto action_base_ptr = std::dynamic_pointer_cast<ClientBase>(request_client_);
+    node_services->add_client(action_base_ptr, group);
+
+    std::string cancel_service_name = "_cancel_" + action_name;
+    cancel_client_ = Client<ActionT>::make_shared(
+        node_base,
+        node_graph,
+        request_service_name,
+        client_options);
+
+    auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
+    node_services->add_client(cancel_base_ptr, group);
+}
 
   virtual ~ActionClient()
   {
@@ -242,7 +253,8 @@ public:
 */
 private:
   RCLCPP_DISABLE_COPY(ActionClient)
-  std::shared_ptr<Client<ActionT>> action_client_;
+  std::shared_ptr<Client<ActionT>> request_client_;
+  std::shared_ptr<Client<ActionT>> cancel_client_;
 };
 
 }  // namespace rclcpp

@@ -34,6 +34,7 @@
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 #include "rclcpp/action_server.hpp"
+#include "rclcpp/action_client.hpp"
 #include "rclcpp/callback_group.hpp"
 #include "rclcpp/client.hpp"
 #include "rclcpp/clock.hpp"
@@ -272,6 +273,13 @@ public:
     const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
     rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
 
+  /* Create and return an ActionClient */
+  template<typename ActionT>
+  typename ActionClient<ActionT>::SharedPtr
+  create_action_client(
+    const std::string & service_name,
+    const rmw_qos_profile_t & qos_profile,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group);
 
   RCLCPP_PUBLIC
   std::vector<rcl_interfaces::msg::SetParametersResult>

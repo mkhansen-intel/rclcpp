@@ -218,6 +218,27 @@ Node::create_action_server(
 	qos_profile, group);
 }
 
+template<typename ActionT>
+typename ActionClient<ActionT>::SharedPtr
+Node::create_action_client(
+  const std::string & service_name,
+  const rmw_qos_profile_t & qos_profile,
+  rclcpp::callback_group::CallbackGroup::SharedPtr group)
+{
+  rcl_client_options_t options = rcl_client_get_default_options();
+  options.qos = qos_profile;
+
+  auto action_client = rclcpp::ActionClient<ActionT>::make_shared(
+    node_base_.get(),
+    node_graph_,
+    service_name,
+    options,
+	node_services_,
+	group);
+
+  return action_client;
+}
+
 template<typename CallbackT>
 void
 Node::register_param_change_callback(CallbackT && callback)

@@ -277,7 +277,7 @@ public:
   template<typename ActionT>
   typename ActionClient<ActionT>::SharedPtr
   create_action_client(
-    const std::string & service_name,
+    const std::string & action_name,
     const rmw_qos_profile_t & qos_profile,
     rclcpp::callback_group::CallbackGroup::SharedPtr group);
 

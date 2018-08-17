@@ -221,7 +221,7 @@ Node::create_action_server(
 template<typename ActionT>
 typename ActionClient<ActionT>::SharedPtr
 Node::create_action_client(
-  const std::string & service_name,
+  const std::string & action_name,
   const rmw_qos_profile_t & qos_profile,
   rclcpp::callback_group::CallbackGroup::SharedPtr group)
 {
@@ -231,7 +231,7 @@ Node::create_action_client(
   auto action_client = rclcpp::ActionClient<ActionT>::make_shared(
     node_base_.get(),
     node_graph_,
-    service_name,
+    action_name,
     options,
 	node_services_,
 	group);

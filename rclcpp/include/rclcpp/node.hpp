@@ -278,8 +278,8 @@ public:
   typename ActionClient<ActionT>::SharedPtr
   create_action_client(
     const std::string & action_name,
-    const rmw_qos_profile_t & qos_profile,
-    rclcpp::callback_group::CallbackGroup::SharedPtr group);
+    const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
 
   RCLCPP_PUBLIC
   std::vector<rcl_interfaces::msg::SetParametersResult>

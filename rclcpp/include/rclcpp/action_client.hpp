@@ -19,18 +19,21 @@
 #include <map>
 #include <memory>
 #include <sstream>
+
 #include <string>
 #include <tuple>
 #include <utility>
 
 #include "rcl/client.h"
+#include "rclcpp/node_interfaces/node_base_interface.hpp"
+
 #include "rcl/error_handling.h"
 #include "rcl/wait.h"
 
 #include "rclcpp/exceptions.hpp"
 #include "rclcpp/function_traits.hpp"
 #include "rclcpp/macros.hpp"
-#include "rclcpp/node_interfaces/node_graph_interface.hpp"
+
 #include "rclcpp/type_support_decl.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/expand_topic_or_service_name.hpp"
@@ -40,6 +43,7 @@
 
 #include "rmw/error_handling.h"
 #include "rmw/rmw.h"
+
 
 namespace rclcpp
 {
@@ -56,8 +60,9 @@ public:
 
   RCLCPP_PUBLIC
   ActionClientBase(
-    rclcpp::node_interfaces::NodeBaseInterface * node_base,
-    rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph);
+    rclcpp::node_interfaces::NodeBaseInterface * node_base)
+    : node_handle_(node_base->get_shared_rcl_node_handle())
+  {}
 
   RCLCPP_PUBLIC
   virtual ~ActionClientBase();
@@ -70,27 +75,8 @@ public:
   bool
   action_is_ready() const;
 
-  template<typename RatioT = std::milli>
-  bool
-  wait_for_action(
-    std::chrono::duration<int64_t, RatioT> timeout = std::chrono::duration<int64_t, RatioT>(-1))
-  {
-    return wait_for_service_nanoseconds(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(timeout)
-    );
-  }
-
-  virtual std::shared_ptr<void> create_response() = 0;
-  virtual std::shared_ptr<rmw_request_id_t> create_request_header() = 0;
-  virtual void handle_response(
-    std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> response) = 0;
-
 protected:
   RCLCPP_DISABLE_COPY(ActionClientBase)
-
-  RCLCPP_PUBLIC
-  bool
-  wait_for_service_nanoseconds(std::chrono::nanoseconds timeout);
 
   RCLCPP_PUBLIC
   rcl_node_t *
@@ -100,14 +86,11 @@ protected:
   const rcl_node_t *
   get_rcl_node_handle() const;
 
-  rclcpp::node_interfaces::NodeGraphInterface::WeakPtr node_graph_;
   std::shared_ptr<rcl_node_t> node_handle_;
-
-  std::shared_ptr<rcl_client_t> client_handle_;
 };
 
 template<typename ActionT>
-class ActionClient : public ActionClientBase
+class ActionClient //TODO : public ActionClientBase
 {
 public:
   using SharedRequest = typename ActionT::Request::SharedPtr;
@@ -134,7 +117,7 @@ public:
     rcl_client_options_t & client_options,
 	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
 	rclcpp::callback_group::CallbackGroup::SharedPtr group)
-  : ActionClientBase(node_base, node_graph)
+  //TODO : ActionClientBase(node_base)
   {
     std::string request_service_name = "_request_" + action_name;
     request_client_ = Client<ActionT>::make_shared(
@@ -150,62 +133,29 @@ public:
     cancel_client_ = Client<ActionT>::make_shared(
         node_base,
         node_graph,
-        request_service_name,
+        cancel_service_name,
         client_options);
 
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
-}
+  }
 
   virtual ~ActionClient()
   {
   }
-/*
-  std::shared_ptr<void>
-  create_response()
-  {
-    return std::shared_ptr<void>(new typename ActionT::Response());
-  }
 
-  std::shared_ptr<rmw_request_id_t>
-  create_request_header()
+  template<typename RatioT = std::milli>
+  bool
+  wait_for_action(
+    std::chrono::duration<int64_t, RatioT> timeout = std::chrono::duration<int64_t, RatioT>(-1))
   {
-    // TODO(wjwwood): This should probably use rmw_request_id's allocator.
-    //                (since it is a C type)
-    return std::shared_ptr<rmw_request_id_t>(new rmw_request_id_t);
-  }
-
-  void
-  handle_response(
-    std::shared_ptr<rmw_request_id_t> request_header,
-    std::shared_ptr<void> response)
-  {
-    std::unique_lock<std::mutex> lock(pending_requests_mutex_);
-    auto typed_response = std::static_pointer_cast<typename ActionT::Response>(response);
-    int64_t sequence_number = request_header->sequence_number;
-    // TODO(esteve) this should throw instead since it is not expected to happen in the first place
-    if (this->pending_requests_.count(sequence_number) == 0) {
-      RCUTILS_LOG_ERROR_NAMED(
-        "rclcpp",
-        "Received invalid sequence number. Ignoring...");
-      return;
-    }
-    auto tuple = this->pending_requests_[sequence_number];
-    auto call_promise = std::get<0>(tuple);
-    auto callback = std::get<1>(tuple);
-    auto future = std::get<2>(tuple);
-    this->pending_requests_.erase(sequence_number);
-    // Unlock here to allow the service to be called recursively from one of its callbacks.
-    lock.unlock();
-
-    call_promise->set_value(typed_response);
-    callback(future);
+    return request_client_->wait_for_service(timeout);
   }
 
   SharedFuture
   async_send_request(SharedRequest request)
   {
-    return async_send_request(request, [](SharedFuture) {});
+    return request_client_->async_send_request(request);
   }
 
   template<
@@ -220,18 +170,7 @@ public:
   SharedFuture
   async_send_request(SharedRequest request, CallbackT && cb)
   {
-    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-    int64_t sequence_number;
-    rcl_ret_t ret = rcl_send_request(get_client_handle().get(), request.get(), &sequence_number);
-    if (RCL_RET_OK != ret) {
-      rclcpp::exceptions::throw_from_rcl_error(ret, "failed to send request");
-    }
-
-    SharedPromise call_promise = std::make_shared<Promise>();
-    SharedFuture f(call_promise->get_future());
-    pending_requests_[sequence_number] =
-      std::make_tuple(call_promise, std::forward<CallbackType>(cb), f);
-    return f;
+    return request_client_->async_send_request(request, cb);
   }
 
   template<
@@ -246,11 +185,17 @@ public:
   SharedFutureWithRequest
   async_send_request(SharedRequest request, CallbackT && cb)
   {
-    action_client_->async_send_request(request, cb)
-
-    return future_with_request;
+    return request_client_->async_send_request(request, cb);
   }
-*/
+
+
+  SharedFuture
+  cancel_request(SharedRequest request)
+  {
+	return cancel_client_->async_send_request(request);
+  }
+
+
 private:
   RCLCPP_DISABLE_COPY(ActionClient)
   std::shared_ptr<Client<ActionT>> request_client_;

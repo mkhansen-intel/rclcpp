@@ -65,7 +65,7 @@ public:
   {}
 
   RCLCPP_PUBLIC
-  virtual ~ActionClientBase();
+  ~ActionClientBase();
 
   RCLCPP_PUBLIC
   const char *

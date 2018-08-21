@@ -39,6 +39,7 @@
 #include "rclcpp/intra_process_manager.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/create_action_server.hpp"
+#include "rclcpp/action_client.hpp"
 #include "rclcpp/create_publisher.hpp"
 #include "rclcpp/create_service.hpp"
 #include "rclcpp/create_subscription.hpp"
@@ -219,7 +220,7 @@ Node::create_action_server(
 }
 
 template<typename ActionT>
-typename ActionClient<ActionT>::SharedPtr
+typename rclcpp::ActionClient<ActionT>::SharedPtr
 Node::create_action_client(
   const std::string & action_name,
   const rmw_qos_profile_t & qos_profile,

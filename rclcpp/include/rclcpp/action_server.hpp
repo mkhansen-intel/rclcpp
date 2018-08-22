@@ -35,6 +35,10 @@
 #include "rclcpp/service.hpp"
 #include "rclcpp/node_interfaces/node_services_interface.hpp"
 
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
+#include "rclcpp/publisher.hpp"
+#include "rclcpp/create_publisher.hpp"
+
 namespace rclcpp
 {
 
@@ -68,7 +72,8 @@ protected:
   std::shared_ptr<rcl_node_t> node_handle_;
 };
 
-template<typename ActionT>
+template<typename ActionT, typename MessageT, typename Alloc = std::allocator<void>,
+	    typename PublisherT = ::rclcpp::Publisher<MessageT, Alloc>>
 class ActionServer : public ActionServerBase
 {
 public:
@@ -76,12 +81,15 @@ public:
 
   ActionServer(
     std::shared_ptr<rcl_node_t> node_handle,
+	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
+	std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
     const std::string & action_name,
     AnyServiceCallback<ActionT> request_callback,
     AnyServiceCallback<ActionT> cancel_callback,
     rcl_service_options_t & service_options,
-	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
-	rclcpp::callback_group::CallbackGroup::SharedPtr group)
+	rclcpp::callback_group::CallbackGroup::SharedPtr group,
+    bool use_intra_process_comms,
+	std::shared_ptr<Alloc> allocator)
   : ActionServerBase(node_handle), action_name_(action_name)
   {
     std::string request_service_name = "_request_" + action_name;
@@ -94,9 +102,14 @@ public:
     auto cancel_base_ptr = std::dynamic_pointer_cast<ServiceBase>(cancel_service_);
     node_services->add_service(cancel_base_ptr, group);
 
-    //std::string feedback_topic_name = "_feedback_" + action_name;
-    // TODO: Add feedback publisher
-    //feedback_publisher_ =
+    std::string feedback_topic_name = "_feedback_" + action_name;
+
+    feedback_publisher_ = rclcpp::create_publisher<MessageT, Alloc, PublisherT>(
+    	    node_topics.get(),
+    	    feedback_topic_name,
+    	    service_options.qos,
+    	    use_intra_process_comms,
+    	    allocator);
   }
   
   ActionServer() = delete;
@@ -116,6 +129,7 @@ private:
   const std::string action_name_;
   std::shared_ptr<Service<ActionT>> request_service_;
   std::shared_ptr<Service<ActionT>> cancel_service_;
+  std::shared_ptr<Publisher<MessageT>> feedback_publisher_;
 };
 
 }  // namespace rclcpp

@@ -30,16 +30,19 @@ namespace rclcpp
 
 /// Create an Action with a given type.
 /// \internal
-template<typename ActionT, typename CallbackT>
-typename rclcpp::ActionServer<ActionT>::SharedPtr
+template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc, typename PublisherT>
+typename rclcpp::ActionServer<ActionT, MessageT>::SharedPtr
 create_action_server(
   std::shared_ptr<node_interfaces::NodeBaseInterface> node_base,
   std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
+  std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
   const std::string & action_name,
   CallbackT && action_callback,
   CallbackT && cancel_callback,
   const rmw_qos_profile_t & qos_profile,
-  rclcpp::callback_group::CallbackGroup::SharedPtr group)
+  rclcpp::callback_group::CallbackGroup::SharedPtr group,
+  bool use_intra_process_comms,
+  std::shared_ptr<Alloc> allocator)
 {
   rcl_service_options_t service_options = rcl_service_get_default_options();
   service_options.qos = qos_profile;
@@ -50,9 +53,10 @@ create_action_server(
   rclcpp::AnyServiceCallback<ActionT> cancel_service_callback;
   cancel_service_callback.set(std::forward<CallbackT>(cancel_callback));
 
-  auto action_server = rclcpp::ActionServer<ActionT>::make_shared(node_base->get_shared_rcl_node_handle(),
+  auto action_server = rclcpp::ActionServer<ActionT, MessageT, Alloc, PublisherT>::make_shared(node_base->get_shared_rcl_node_handle(),
+		  node_services, node_topics,
 		  action_name, action_service_callback, cancel_service_callback, service_options,
-		  node_services, group);
+		  group, use_intra_process_comms, allocator);
 
   return action_server;
 }

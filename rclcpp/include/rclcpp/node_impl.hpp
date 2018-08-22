@@ -204,19 +204,23 @@ Node::create_service(
     service_name, std::forward<CallbackT>(callback), qos_profile, group);
 }
 
-template<typename ActionT, typename CallbackT>
-typename rclcpp::ActionServer<ActionT>::SharedPtr
+template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc, typename PublisherT>
+typename rclcpp::ActionServer<ActionT, MessageT>::SharedPtr
 Node::create_action_server(
   const std::string & action_name,
   CallbackT && action_callback,
   CallbackT && cancel_callback,
   const rmw_qos_profile_t & qos_profile,
-  rclcpp::callback_group::CallbackGroup::SharedPtr group)
+  rclcpp::callback_group::CallbackGroup::SharedPtr group,
+  std::shared_ptr<Alloc> allocator)
 {
-  return rclcpp::create_action_server<ActionT, CallbackT>(
-    node_base_, node_services_,
+  if (!allocator) {
+	    allocator = std::make_shared<Alloc>();
+  }
+  return rclcpp::create_action_server<ActionT, MessageT, CallbackT, Alloc, PublisherT>(
+    node_base_, node_services_, node_topics_,
     action_name, std::forward<CallbackT>(action_callback), std::forward<CallbackT>(cancel_callback),
-	qos_profile, group);
+	qos_profile, group, use_intra_process_comms_, allocator);
 }
 
 template<typename ActionT>

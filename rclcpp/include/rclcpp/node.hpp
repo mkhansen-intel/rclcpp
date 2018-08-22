@@ -264,14 +264,16 @@ public:
     rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
  
   /* Create and return an ActionServer */
-  template<typename ActionT, typename CallbackT>
-  typename rclcpp::ActionServer<ActionT>::SharedPtr
+  template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>,
+		    typename PublisherT = ::rclcpp::Publisher<MessageT, Alloc>>
+  typename rclcpp::ActionServer<ActionT, MessageT>::SharedPtr
   create_action_server(
     const std::string & action_name,
     CallbackT && action_callback,
 	CallbackT && cancel_callback,
     const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
-    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr,
+	std::shared_ptr<Alloc> allocator = nullptr);
 
   /* Create and return an ActionClient */
   template<typename ActionT>

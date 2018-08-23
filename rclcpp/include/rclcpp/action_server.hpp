@@ -124,6 +124,16 @@ public:
 	  return action_name_;
   }
 
+  void publish_feedback(const std::shared_ptr<MessageT> & msg)
+  {
+	  feedback_publisher_->publish(msg);
+  }
+
+  void publish_feedback(const MessageT & msg)
+  {
+	  feedback_publisher_->publish(msg);
+  }
+
 private:
   RCLCPP_DISABLE_COPY(ActionServer)
   const std::string action_name_;

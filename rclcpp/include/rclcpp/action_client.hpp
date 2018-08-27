@@ -26,6 +26,7 @@
 
 #include "rcl/client.h"
 #include "rclcpp/node_interfaces/node_base_interface.hpp"
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
 
 #include "rcl/error_handling.h"
 #include "rcl/wait.h"
@@ -43,6 +44,7 @@
 
 #include "rmw/error_handling.h"
 #include "rmw/rmw.h"
+#include "rclcpp/create_subscription.hpp"
 
 
 namespace rclcpp
@@ -89,7 +91,7 @@ protected:
   std::shared_ptr<rcl_node_t> node_handle_;
 };
 
-template<typename ActionT>
+template<typename ActionT, typename MessageT, typename FBCallbackT, typename Alloc>
 class ActionClient //TODO : public ActionClientBase
 {
 public:
@@ -114,9 +116,17 @@ public:
     rclcpp::node_interfaces::NodeBaseInterface * node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
     const std::string & action_name,
+	FBCallbackT && feedback_callback,
     rcl_client_options_t & client_options,
 	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
-	rclcpp::callback_group::CallbackGroup::SharedPtr group)
+	std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
+	rclcpp::callback_group::CallbackGroup::SharedPtr group,
+	bool ignore_local_publications,
+	bool use_intra_process_comms,
+	typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
+	  typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type, Alloc>::SharedPtr
+	  msg_mem_strat,
+	  std::shared_ptr<Alloc> allocator)
   //TODO : ActionClientBase(node_base)
   {
     std::string request_service_name = "_request_" + action_name;
@@ -138,6 +148,19 @@ public:
 
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
+
+    std::string feedback_topic_name = "_feedback_" + action_name;
+    using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type;
+    feedback_subscriber_ = rclcpp::create_subscription<MessageT, FBCallbackT, Alloc, CallbackMessageT>(
+        node_topics.get(),
+        feedback_topic_name,
+        std::forward<FBCallbackT>(feedback_callback),
+        client_options.qos,
+        group,
+        ignore_local_publications,
+        use_intra_process_comms,
+        msg_mem_strat,
+        allocator);
   }
 
   virtual ~ActionClient()
@@ -200,6 +223,7 @@ private:
   RCLCPP_DISABLE_COPY(ActionClient)
   std::shared_ptr<Client<ActionT>> request_client_;
   std::shared_ptr<Client<ActionT>> cancel_client_;
+  std::shared_ptr<Subscription<MessageT>> feedback_subscriber_;
 };
 
 }  // namespace rclcpp

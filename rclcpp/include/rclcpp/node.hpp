@@ -276,12 +276,18 @@ public:
 	std::shared_ptr<Alloc> allocator = nullptr);
 
   /* Create and return an ActionClient */
-  template<typename ActionT>
-  typename ActionClient<ActionT>::SharedPtr
+  template<typename ActionT,  typename MessageT, typename FBCallbackT, typename Alloc = std::allocator<void>>
+  typename ActionClient<ActionT, MessageT, FBCallbackT, Alloc>::SharedPtr
   create_action_client(
     const std::string & action_name,
+	FBCallbackT && feedback_callback,
     const rmw_qos_profile_t & qos_profile = rmw_qos_profile_services_default,
-    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr);
+    rclcpp::callback_group::CallbackGroup::SharedPtr group = nullptr,
+	bool ignore_local_publications = false,
+	typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
+	    typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type, Alloc>::SharedPtr
+	msg_mem_strat = nullptr,
+	std::shared_ptr<Alloc> allocator = nullptr);
 
   RCLCPP_PUBLIC
   std::vector<rcl_interfaces::msg::SetParametersResult>

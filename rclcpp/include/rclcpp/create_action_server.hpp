@@ -15,15 +15,7 @@
 #ifndef RCLCPP__CREATE_ACTION_SERVER_HPP_
 #define RCLCPP__CREATE_ACTION_SERVER_HPP_
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include "rclcpp/action_server.hpp"
-#include "rclcpp/node_interfaces/node_base_interface.hpp"
-#include "rclcpp/node_interfaces/node_services_interface.hpp"
-#include "rclcpp/visibility_control.hpp"
-#include "rmw/rmw.h"
 
 namespace rclcpp
 {

@@ -28,8 +28,7 @@
 namespace rclcpp
 {
 
-/// Create an Action with a given type.
-/// \internal
+/// Create an Action with a given type
 template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc, typename PublisherT>
 typename rclcpp::ActionServer<ActionT, MessageT>::SharedPtr
 create_action_server(
@@ -63,4 +62,4 @@ create_action_server(
 
 }  // namespace rclcpp
 
-#endif  // RCLCPP__CREATE_SERVICE_HPP_
+#endif  // RCLCPP__CREATE_ACTION_SERVER_HPP_

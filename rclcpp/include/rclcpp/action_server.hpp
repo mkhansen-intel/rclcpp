@@ -42,39 +42,9 @@
 namespace rclcpp
 {
 
-class ActionServerBase
-{
-public:
-  RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(ActionServerBase)
-
-  RCLCPP_PUBLIC
-  explicit ActionServerBase(
-    std::shared_ptr<rcl_node_t> node_handle);
-
-  RCLCPP_PUBLIC
-  virtual ~ActionServerBase();
-
-  RCLCPP_PUBLIC
-  const char *
-  get_action_name();
-
-protected:
-  RCLCPP_DISABLE_COPY(ActionServerBase)
-
-  RCLCPP_PUBLIC
-  rcl_node_t *
-  get_rcl_node_handle();
-
-  RCLCPP_PUBLIC
-  const rcl_node_t *
-  get_rcl_node_handle() const;
-
-  std::shared_ptr<rcl_node_t> node_handle_;
-};
-
 template<typename ActionT, typename MessageT, typename Alloc = std::allocator<void>,
 	    typename PublisherT = ::rclcpp::Publisher<MessageT, Alloc>>
-class ActionServer : public ActionServerBase
+class ActionServer
 {
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(ActionServer)
@@ -90,7 +60,7 @@ public:
 	rclcpp::callback_group::CallbackGroup::SharedPtr group,
     bool use_intra_process_comms,
 	std::shared_ptr<Alloc> allocator)
-  : ActionServerBase(node_handle), action_name_(action_name)
+  : action_name_(action_name)
   {
     std::string request_service_name = "_request_" + action_name;
     request_service_ = Service<ActionT>::make_shared(node_handle, request_service_name, request_callback, service_options);

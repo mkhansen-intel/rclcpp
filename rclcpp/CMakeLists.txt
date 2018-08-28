@@ -30,7 +30,6 @@ endif()
 include_directories(include)
 
 set(${PROJECT_NAME}_SRCS
-  src/rclcpp/action_server.cpp
   src/rclcpp/any_executable.cpp
   src/rclcpp/callback_group.cpp
   src/rclcpp/client.cpp

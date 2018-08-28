@@ -46,6 +46,8 @@
 #include "rmw/rmw.h"
 #include "rclcpp/create_subscription.hpp"
 
+#include "rclcpp/logger.hpp"
+
 
 namespace rclcpp
 {
@@ -91,7 +93,7 @@ protected:
   std::shared_ptr<rcl_node_t> node_handle_;
 };
 
-template<typename ActionT, typename MessageT, typename FBCallbackT, typename Alloc>
+template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc>
 class ActionClient //TODO : public ActionClientBase
 {
 public:
@@ -116,7 +118,7 @@ public:
     rclcpp::node_interfaces::NodeBaseInterface * node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
     const std::string & action_name,
-	FBCallbackT && feedback_callback,
+	CallbackT && feedback_callback,
     rcl_client_options_t & client_options,
 	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
 	std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
@@ -124,7 +126,7 @@ public:
 	bool ignore_local_publications,
 	bool use_intra_process_comms,
 	typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
-	  typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type, Alloc>::SharedPtr
+	  typename rclcpp::subscription_traits::has_message_type<CallbackT>::type, Alloc>::SharedPtr
 	  msg_mem_strat,
 	  std::shared_ptr<Alloc> allocator)
   //TODO : ActionClientBase(node_base)
@@ -149,12 +151,17 @@ public:
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
 
+    if (nullptr == feedback_callback) {
+    	RCLCPP_ERROR(rclcpp::get_logger(action_name), "feedback_callback is a nullptr")
+    }
+    RCLCPP_INFO(rclcpp::get_logger(action_name), "feedback_callback = %x",feedback_callback)
+
     std::string feedback_topic_name = "_feedback_" + action_name;
-    using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type;
-    feedback_subscriber_ = rclcpp::create_subscription<MessageT, FBCallbackT, Alloc, CallbackMessageT>(
+    using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;
+    feedback_subscriber_ = rclcpp::create_subscription<MessageT, CallbackT, Alloc, CallbackMessageT>(
         node_topics.get(),
         feedback_topic_name,
-        std::forward<FBCallbackT>(feedback_callback),
+        std::forward<CallbackT>(feedback_callback),
         client_options.qos,
         group,
         ignore_local_publications,
@@ -180,7 +187,7 @@ public:
   {
     return request_client_->async_send_request(request);
   }
-
+/*  TODO: remove the extra async_send_request functions
   template<
     typename CallbackT,
     typename std::enable_if<
@@ -211,7 +218,7 @@ public:
     return request_client_->async_send_request(request, cb);
   }
 
-
+*/
   SharedFuture
   cancel_request(SharedRequest request)
   {

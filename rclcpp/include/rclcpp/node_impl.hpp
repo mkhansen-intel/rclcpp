@@ -223,16 +223,16 @@ Node::create_action_server(
 	qos_profile, group, use_intra_process_comms_, allocator);
 }
 
-template<typename ActionT, typename MessageT, typename FBCallbackT, typename Alloc>
-typename rclcpp::ActionClient<ActionT, MessageT, FBCallbackT, Alloc>::SharedPtr
+template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc>
+typename rclcpp::ActionClient<ActionT, MessageT, CallbackT, Alloc>::SharedPtr
 Node::create_action_client(
   const std::string & action_name,
-  FBCallbackT && feedback_callback,
+  CallbackT && feedback_callback,
   const rmw_qos_profile_t & qos_profile,
   rclcpp::callback_group::CallbackGroup::SharedPtr group,
   bool ignore_local_publications,
   typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
-    typename rclcpp::subscription_traits::has_message_type<FBCallbackT>::type, Alloc>::SharedPtr
+    typename rclcpp::subscription_traits::has_message_type<CallbackT>::type, Alloc>::SharedPtr
   msg_mem_strat,
   std::shared_ptr<Alloc> allocator)
 {
@@ -240,11 +240,11 @@ Node::create_action_client(
   options.qos = qos_profile;
 
   //TODO: add create_action_client.hpp
-  auto action_client = rclcpp::ActionClient<ActionT, MessageT, FBCallbackT, Alloc>::make_shared(
+  auto action_client = rclcpp::ActionClient<ActionT, MessageT, CallbackT, Alloc>::make_shared(
     node_base_.get(),
     node_graph_,
     action_name,
-	std::forward<FBCallbackT>(feedback_callback),
+	std::forward<CallbackT>(feedback_callback),
     options,
 	node_services_,
 	node_topics_,

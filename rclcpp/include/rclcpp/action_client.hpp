@@ -1,4 +1,4 @@
-// Copyright 2014 Open Source Robotics Foundation, Inc.
+// Copyright 2018 Open Source Robotics Foundation, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,13 +115,13 @@ public:
   RCLCPP_SMART_PTR_DEFINITIONS(ActionClient)
 
   ActionClient(
-    rclcpp::node_interfaces::NodeBaseInterface * node_base,
+    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
-    const std::string & action_name,
+    rclcpp::node_interfaces::NodeServicesInterface::SharedPtr node_services,
+    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
+	const std::string & action_name,
 	CallbackT && feedback_callback,
     rcl_client_options_t & client_options,
-	std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
-	std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
 	rclcpp::callback_group::CallbackGroup::SharedPtr group,
 	bool ignore_local_publications,
 	bool use_intra_process_comms,
@@ -133,7 +133,7 @@ public:
   {
     std::string request_service_name = "_request_" + action_name;
     request_client_ = Client<ActionT>::make_shared(
-        node_base,
+        node_base.get(),
         node_graph,
         request_service_name,
         client_options);
@@ -143,7 +143,7 @@ public:
 
     std::string cancel_service_name = "_cancel_" + action_name;
     cancel_client_ = Client<ActionT>::make_shared(
-        node_base,
+        node_base.get(),
         node_graph,
         cancel_service_name,
         client_options);

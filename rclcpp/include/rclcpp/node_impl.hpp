@@ -39,7 +39,7 @@
 #include "rclcpp/intra_process_manager.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/create_action_server.hpp"
-#include "rclcpp/action_client.hpp"
+#include "rclcpp/create_action_client.hpp"
 #include "rclcpp/create_publisher.hpp"
 #include "rclcpp/create_service.hpp"
 #include "rclcpp/create_subscription.hpp"
@@ -239,22 +239,19 @@ Node::create_action_client(
   rcl_client_options_t options = rcl_client_get_default_options();
   options.qos = qos_profile;
 
-  //TODO: add create_action_client.hpp
-  auto action_client = rclcpp::ActionClient<ActionT, MessageT, CallbackT, Alloc>::make_shared(
-    node_base_.get(),
+  return rclcpp::create_action_client<ActionT, MessageT, CallbackT, Alloc>(
+    node_base_,
     node_graph_,
-    action_name,
-	std::forward<CallbackT>(feedback_callback),
-    options,
 	node_services_,
 	node_topics_,
+	action_name,
+	std::forward<CallbackT>(feedback_callback),
+    options,
 	group,
 	ignore_local_publications,
 	use_intra_process_comms_,
 	msg_mem_strat,
 	allocator);
-
-  return action_client;
 }
 
 template<typename CallbackT>

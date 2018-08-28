@@ -187,38 +187,7 @@ public:
   {
     return request_client_->async_send_request(request);
   }
-/*  TODO: remove the extra async_send_request functions
-  template<
-    typename CallbackT,
-    typename std::enable_if<
-      rclcpp::function_traits::same_arguments<
-        CallbackT,
-        CallbackType
-      >::value
-    >::type * = nullptr
-  >
-  SharedFuture
-  async_send_request(SharedRequest request, CallbackT && cb)
-  {
-    return request_client_->async_send_request(request, cb);
-  }
 
-  template<
-    typename CallbackT,
-    typename std::enable_if<
-      rclcpp::function_traits::same_arguments<
-        CallbackT,
-        CallbackWithRequestType
-      >::value
-    >::type * = nullptr
-  >
-  SharedFutureWithRequest
-  async_send_request(SharedRequest request, CallbackT && cb)
-  {
-    return request_client_->async_send_request(request, cb);
-  }
-
-*/
   SharedFuture
   cancel_request(SharedRequest request)
   {

@@ -15,39 +15,9 @@
 #ifndef RCLCPP__ACTION_CLIENT_HPP_
 #define RCLCPP__ACTION_CLIENT_HPP_
 
-#include <future>
-#include <map>
-#include <memory>
-#include <sstream>
-
-#include <string>
-#include <tuple>
-#include <utility>
-
-#include "rcl/client.h"
-#include "rclcpp/node_interfaces/node_base_interface.hpp"
-#include "rclcpp/node_interfaces/node_topics_interface.hpp"
-
-#include "rcl/error_handling.h"
-#include "rcl/wait.h"
-
-#include "rclcpp/exceptions.hpp"
-#include "rclcpp/function_traits.hpp"
-#include "rclcpp/macros.hpp"
-
-#include "rclcpp/type_support_decl.hpp"
-#include "rclcpp/utilities.hpp"
-#include "rclcpp/expand_topic_or_service_name.hpp"
-#include "rclcpp/visibility_control.hpp"
-
-#include "rcutils/logging_macros.h"
-
-#include "rmw/error_handling.h"
-#include "rmw/rmw.h"
-#include "rclcpp/create_subscription.hpp"
-
 #include "rclcpp/logger.hpp"
-
+#include "rclcpp/client.hpp"
+#include "rclcpp/create_subscription.hpp"
 
 namespace rclcpp
 {
@@ -57,60 +27,13 @@ namespace node_interfaces
 class NodeBaseInterface;
 }  // namespace node_interfaces
 
-class ActionClientBase
-{
-public:
-  RCLCPP_SMART_PTR_DEFINITIONS_NOT_COPYABLE(ActionClientBase)
-
-  RCLCPP_PUBLIC
-  ActionClientBase(
-    rclcpp::node_interfaces::NodeBaseInterface * node_base)
-    : node_handle_(node_base->get_shared_rcl_node_handle())
-  {}
-
-  RCLCPP_PUBLIC
-  ~ActionClientBase();
-
-  RCLCPP_PUBLIC
-  const char *
-  get_action_name() const;
-
-  RCLCPP_PUBLIC
-  bool
-  action_is_ready() const;
-
-protected:
-  RCLCPP_DISABLE_COPY(ActionClientBase)
-
-  RCLCPP_PUBLIC
-  rcl_node_t *
-  get_rcl_node_handle();
-
-  RCLCPP_PUBLIC
-  const rcl_node_t *
-  get_rcl_node_handle() const;
-
-  std::shared_ptr<rcl_node_t> node_handle_;
-};
-
 template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc>
-class ActionClient //TODO : public ActionClientBase
+class ActionClient
 {
 public:
   using SharedRequest = typename ActionT::Request::SharedPtr;
   using SharedResponse = typename ActionT::Response::SharedPtr;
-
-  using Promise = std::promise<SharedResponse>;
-  using PromiseWithRequest = std::promise<std::pair<SharedRequest, SharedResponse>>;
-
-  using SharedPromise = std::shared_ptr<Promise>;
-  using SharedPromiseWithRequest = std::shared_ptr<PromiseWithRequest>;
-
   using SharedFuture = std::shared_future<SharedResponse>;
-  using SharedFutureWithRequest = std::shared_future<std::pair<SharedRequest, SharedResponse>>;
-
-  using CallbackType = std::function<void(SharedFuture)>;
-  using CallbackWithRequestType = std::function<void(SharedFutureWithRequest)>;
 
   RCLCPP_SMART_PTR_DEFINITIONS(ActionClient)
 
@@ -129,7 +52,6 @@ public:
 	  typename rclcpp::subscription_traits::has_message_type<CallbackT>::type, Alloc>::SharedPtr
 	  msg_mem_strat,
 	  std::shared_ptr<Alloc> allocator)
-  //TODO : ActionClientBase(node_base)
   {
     std::string request_service_name = "_request_" + action_name;
     request_client_ = Client<ActionT>::make_shared(
@@ -151,10 +73,7 @@ public:
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
 
-    if (nullptr == feedback_callback) {
-    	RCLCPP_ERROR(rclcpp::get_logger(action_name), "feedback_callback is a nullptr")
-    }
-    RCLCPP_INFO(rclcpp::get_logger(action_name), "feedback_callback = %x",feedback_callback)
+    RCLCPP_INFO(rclcpp::get_logger(action_name), "DEBUG: feedback_callback = %x",feedback_callback)
 
     std::string feedback_topic_name = "_feedback_" + action_name;
     using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;

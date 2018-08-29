@@ -15,6 +15,10 @@
 #ifndef RCLCPP__ACTION_CLIENT_HPP_
 #define RCLCPP__ACTION_CLIENT_HPP_
 
+#include <string>
+#include <memory>
+#include <utility>
+
 #include "rclcpp/logger.hpp"
 #include "rclcpp/client.hpp"
 #include "rclcpp/create_subscription.hpp"
@@ -42,51 +46,53 @@ public:
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
     rclcpp::node_interfaces::NodeServicesInterface::SharedPtr node_services,
     rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-	const std::string & action_name,
-	CallbackT && feedback_callback,
+    const std::string & action_name,
+    CallbackT && feedback_callback,
     rcl_client_options_t & client_options,
-	rclcpp::callback_group::CallbackGroup::SharedPtr group,
-	bool ignore_local_publications,
-	bool use_intra_process_comms,
-	typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
-	  typename rclcpp::subscription_traits::has_message_type<CallbackT>::type, Alloc>::SharedPtr
-	  msg_mem_strat,
-	  std::shared_ptr<Alloc> allocator)
+    rclcpp::callback_group::CallbackGroup::SharedPtr group,
+    bool ignore_local_publications,
+    bool use_intra_process_comms,
+    typename rclcpp::message_memory_strategy::MessageMemoryStrategy<
+      typename rclcpp::subscription_traits::has_message_type<CallbackT>::type, Alloc>::SharedPtr
+    msg_mem_strat,
+    std::shared_ptr<Alloc> allocator)
   {
     std::string request_service_name = "_request_" + action_name;
     request_client_ = Client<ActionT>::make_shared(
-        node_base.get(),
-        node_graph,
-        request_service_name,
-        client_options);
+      node_base.get(),
+      node_graph,
+      request_service_name,
+      client_options);
 
     auto action_base_ptr = std::dynamic_pointer_cast<ClientBase>(request_client_);
     node_services->add_client(action_base_ptr, group);
 
     std::string cancel_service_name = "_cancel_" + action_name;
     cancel_client_ = Client<ActionT>::make_shared(
-        node_base.get(),
-        node_graph,
-        cancel_service_name,
-        client_options);
+      node_base.get(),
+      node_graph,
+      cancel_service_name,
+      client_options);
 
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
 
-    RCLCPP_INFO(rclcpp::get_logger(action_name), "DEBUG: feedback_callback = %x",feedback_callback)
+    RCLCPP_INFO(rclcpp::get_logger(action_name), "DEBUG: feedback_callback = %x", feedback_callback)
 
     std::string feedback_topic_name = "_feedback_" + action_name;
-    using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;
-    feedback_subscriber_ = rclcpp::create_subscription<MessageT, CallbackT, Alloc, CallbackMessageT>(
-        node_topics.get(),
-        feedback_topic_name,
-        std::forward<CallbackT>(feedback_callback),
-        client_options.qos,
-        group,
-        ignore_local_publications,
-        use_intra_process_comms,
-        msg_mem_strat,
-        allocator);
+    using CallbackMessageT =
+      typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;
+    feedback_subscriber_ =
+      rclcpp::create_subscription<MessageT, CallbackT, Alloc, CallbackMessageT>(
+      node_topics.get(),
+      feedback_topic_name,
+      std::forward<CallbackT>(feedback_callback),
+      client_options.qos,
+      group,
+      ignore_local_publications,
+      use_intra_process_comms,
+      msg_mem_strat,
+      allocator);
   }
 
   virtual ~ActionClient()
@@ -110,9 +116,8 @@ public:
   SharedFuture
   cancel_request(SharedRequest request)
   {
-	return cancel_client_->async_send_request(request);
+    return cancel_client_->async_send_request(request);
   }
-
 
 private:
   RCLCPP_DISABLE_COPY(ActionClient)

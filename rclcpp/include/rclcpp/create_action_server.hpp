@@ -15,13 +15,18 @@
 #ifndef RCLCPP__CREATE_ACTION_SERVER_HPP_
 #define RCLCPP__CREATE_ACTION_SERVER_HPP_
 
+#include <string>
+#include <memory>
+#include <utility>
+
 #include "rclcpp/action_server.hpp"
 
 namespace rclcpp
 {
 
 /// Create an Action with a given type
-template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc, typename PublisherT>
+template<typename ActionT, typename MessageT, typename CallbackT, typename Alloc,
+  typename PublisherT>
 typename rclcpp::ActionServer<ActionT, MessageT>::SharedPtr
 create_action_server(
   std::shared_ptr<node_interfaces::NodeBaseInterface> node_base,
@@ -44,10 +49,11 @@ create_action_server(
   rclcpp::AnyServiceCallback<ActionT> cancel_service_callback;
   cancel_service_callback.set(std::forward<CallbackT>(cancel_callback));
 
-  auto action_server = rclcpp::ActionServer<ActionT, MessageT, Alloc, PublisherT>::make_shared(node_base->get_shared_rcl_node_handle(),
-		  node_services, node_topics,
-		  action_name, action_service_callback, cancel_service_callback, service_options,
-		  group, use_intra_process_comms, allocator);
+  auto action_server = rclcpp::ActionServer<ActionT, MessageT, Alloc, PublisherT>::make_shared(
+    node_base->get_shared_rcl_node_handle(),
+    node_services, node_topics,
+    action_name, action_service_callback, cancel_service_callback, service_options,
+    group, use_intra_process_comms, allocator);
 
   return action_server;
 }

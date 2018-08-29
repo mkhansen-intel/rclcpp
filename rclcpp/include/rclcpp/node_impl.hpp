@@ -239,6 +239,17 @@ Node::create_action_client(
   rcl_client_options_t options = rcl_client_get_default_options();
   options.qos = qos_profile;
 
+  using CallbackMessageT = typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;
+
+  if (!msg_mem_strat) {
+    using rclcpp::message_memory_strategy::MessageMemoryStrategy;
+    msg_mem_strat = MessageMemoryStrategy<CallbackMessageT, Alloc>::create_default();
+  }
+
+  if (!allocator) {
+    allocator = std::make_shared<Alloc>();
+  }
+
   return rclcpp::create_action_client<ActionT, MessageT, CallbackT, Alloc>(
     node_base_,
     node_graph_,

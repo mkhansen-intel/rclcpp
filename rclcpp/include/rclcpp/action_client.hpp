@@ -77,8 +77,6 @@ public:
     auto cancel_base_ptr = std::dynamic_pointer_cast<ClientBase>(cancel_client_);
     node_services->add_client(cancel_base_ptr, group);
 
-    RCLCPP_INFO(rclcpp::get_logger(action_name), "DEBUG: feedback_callback = %x", feedback_callback)
-
     std::string feedback_topic_name = "_feedback_" + action_name;
     using CallbackMessageT =
       typename rclcpp::subscription_traits::has_message_type<CallbackT>::type;

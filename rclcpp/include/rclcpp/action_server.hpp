@@ -18,23 +18,14 @@
 #include <memory>
 #include <string>
 
-#include "rcl/error_handling.h"
-#include "rcl/service.h"
-
 #include "rclcpp/any_service_callback.hpp"
-#include "rclcpp/exceptions.hpp"
 #include "rclcpp/macros.hpp"
-#include "rclcpp/type_support_decl.hpp"
-#include "rclcpp/expand_topic_or_service_name.hpp"
-#include "rclcpp/visibility_control.hpp"
-#include "rclcpp/logging.hpp"
 
 #include "rclcpp/service.hpp"
 #include "rclcpp/node_interfaces/node_services_interface.hpp"
 
-#include "rclcpp/node_interfaces/node_topics_interface.hpp"
-#include "rclcpp/publisher.hpp"
 #include "rclcpp/create_publisher.hpp"
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
 
 namespace rclcpp
 {

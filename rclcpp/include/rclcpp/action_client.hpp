@@ -57,14 +57,14 @@ public:
     msg_mem_strat,
     std::shared_ptr<Alloc> allocator)
   {
-    std::string request_service_name = "_request_" + action_name;
-    request_client_ = Client<ActionT>::make_shared(
+    std::string goal_service_name = "_goal_" + action_name;
+    goal_client_ = Client<ActionT>::make_shared(
       node_base.get(),
       node_graph,
-      request_service_name,
+      goal_service_name,
       client_options);
 
-    auto action_base_ptr = std::dynamic_pointer_cast<ClientBase>(request_client_);
+    auto action_base_ptr = std::dynamic_pointer_cast<ClientBase>(goal_client_);
     node_services->add_client(action_base_ptr, group);
 
     std::string cancel_service_name = "_cancel_" + action_name;
@@ -102,24 +102,24 @@ public:
   wait_for_action(
     std::chrono::duration<int64_t, RatioT> timeout = std::chrono::duration<int64_t, RatioT>(-1))
   {
-    return request_client_->wait_for_service(timeout);
+    return goal_client_->wait_for_service(timeout);
   }
 
   SharedFuture
-  async_send_request(SharedRequest request)
+  send_goal(SharedRequest request)
   {
-    return request_client_->async_send_request(request);
+    return goal_client_->async_send_request(request);
   }
 
   SharedFuture
-  cancel_request(SharedRequest request)
+  cancel_goal(SharedRequest request)
   {
     return cancel_client_->async_send_request(request);
   }
 
 private:
   RCLCPP_DISABLE_COPY(ActionClient)
-  std::shared_ptr<Client<ActionT>> request_client_;
+  std::shared_ptr<Client<ActionT>> goal_client_;
   std::shared_ptr<Client<ActionT>> cancel_client_;
   std::shared_ptr<Subscription<MessageT>> feedback_subscriber_;
 };

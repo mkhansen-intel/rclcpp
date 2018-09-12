@@ -42,7 +42,7 @@ public:
     std::shared_ptr<node_interfaces::NodeServicesInterface> node_services,
     std::shared_ptr<node_interfaces::NodeTopicsInterface> node_topics,
     const std::string & action_name,
-    AnyServiceCallback<ActionT> request_callback,
+    AnyServiceCallback<ActionT> goal_callback,
     AnyServiceCallback<ActionT> cancel_callback,
     rcl_service_options_t & service_options,
     rclcpp::callback_group::CallbackGroup::SharedPtr group,
@@ -50,10 +50,10 @@ public:
     std::shared_ptr<Alloc> allocator)
   : action_name_(action_name)
   {
-    std::string request_service_name = "_request_" + action_name;
-    request_service_ = Service<ActionT>::make_shared(node_handle, request_service_name,
-        request_callback, service_options);
-    auto req_base_ptr = std::dynamic_pointer_cast<ServiceBase>(request_service_);
+    std::string goal_service_name = "_goal_" + action_name;
+    goal_service_ = Service<ActionT>::make_shared(node_handle, goal_service_name,
+        goal_callback, service_options);
+    auto req_base_ptr = std::dynamic_pointer_cast<ServiceBase>(goal_service_);
     node_services->add_service(req_base_ptr, group);
 
     std::string cancel_service_name = "_cancel_" + action_name;
@@ -97,7 +97,7 @@ public:
 private:
   RCLCPP_DISABLE_COPY(ActionServer)
   const std::string action_name_;
-  std::shared_ptr<Service<ActionT>> request_service_;
+  std::shared_ptr<Service<ActionT>> goal_service_;
   std::shared_ptr<Service<ActionT>> cancel_service_;
   std::shared_ptr<Publisher<MessageT>> feedback_publisher_;
 };
